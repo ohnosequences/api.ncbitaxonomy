@@ -26,14 +26,14 @@ class ParseNodes extends FunSuite {
     val lastNode  = nodes.lastOption.value
 
     assert {
-      (firstNode.ID === "318") &&
-      (firstNode.parentID === "29438") &&
+      (firstNode.ID === 318) &&
+      (firstNode.parentID === Some(29438)) &&
       (firstNode.rank === "no rank")
     }
 
     assert {
-      (lastNode.ID === "330") &&
-      (lastNode.parentID === "1232139") &&
+      (lastNode.ID === 330) &&
+      (lastNode.parentID === Some(1232139)) &&
       (lastNode.rank === "species")
     }
   }

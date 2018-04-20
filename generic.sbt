@@ -38,6 +38,7 @@ wartremoverWarnings in (Compile, compile) := Warts.allBut(
   Wart.Equals,
   Wart.FinalVal,
   Wart.ImplicitConversion,
+  Wart.NonUnitStatements,
   Wart.Nothing // needed because of the contexts compiler plugin
 )
 ////////////////////////////////////////////////////////////////////////////////

@@ -40,7 +40,7 @@ class ParseFullTaxonomy extends FunSuite {
       // complaints about the values above being unused, so trick sbt into
       // thinkink we are using them.
       // TODO: Code a proper test instead of this silly trick.
-      id + name
+      (id, name)
     }
   }
 
@@ -55,7 +55,7 @@ class ParseFullTaxonomy extends FunSuite {
       // complaints about the values above being unused, so trick sbt into
       // thinkink we are using them.
       // TODO: Code a proper test instead of this silly trick.
-      id + parent + rank
+      (id, parent, rank)
     }
   }
 }
