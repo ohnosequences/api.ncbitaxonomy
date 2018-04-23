@@ -1,8 +1,10 @@
 package ohnosequences.api.ncbitaxonomy.dmp
 
 import ohnosequences.api.ncbitaxonomy._
-import scala.collection.mutable.{ArrayBuffer => MutableArrayBuffer}
-import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.{
+  ArrayBuffer => MutableArrayBuffer,
+  Map => MutableMap
+}
 
 case object row {
 
