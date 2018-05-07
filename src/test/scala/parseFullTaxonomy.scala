@@ -8,7 +8,7 @@ import ohnosequences.test.ReleaseOnlyTest
 import ohnosequences.awstools.s3.S3Object
 import java.io.File
 
-class ParseFullTaxonomy extends FunSuite {
+class FunSuiteWithUtils extends FunSuite {
 
   /**
     * Auxiliary method that returns an Iterator[String] from `file`. If `file`
@@ -29,6 +29,14 @@ class ParseFullTaxonomy extends FunSuite {
 
   def getNamesLines = getLines(db.ncbitaxonomy.names, data.namesLocalFile)
   def getNodesLines = getLines(db.ncbitaxonomy.nodes, data.nodesLocalFile)
+
+  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit): Unit = {
+    val p = new java.io.PrintWriter(f)
+    try { op(p) } finally { p.close() }
+  }
+}
+
+class ParseFullTaxonomy extends FunSuiteWithUtils {
 
   test("Parse all names and access all data", ReleaseOnlyTest) {
 
@@ -56,6 +64,23 @@ class ParseFullTaxonomy extends FunSuite {
       // thinkink we are using them.
       // TODO: Code a proper test instead of this silly trick.
       (id, parent, rank)
+    }
+  }
+}
+
+class IO extends FunSuiteWithUtils {
+  val rootID: TaxID = 1
+  val nodesMap      = dmp.parse.generateNodesMap(getNodesLines)
+
+  test("Parse and write to file", ReleaseOnlyTest) {
+    val (itIn, itOut)  = dmp.parse.treeToIterators(nodesMap, rootID)
+    val parsedNodesMap = dmp.parse.treeFromIterators(itIn, itOut)
+
+    parsedNodesMap foreach {
+      case (k, parsedValue) =>
+        val value = nodesMap(k)
+        assert { parsedValue._1 == value._1 }
+        assert { parsedValue._2 sameElements value._2 }
     }
   }
 }

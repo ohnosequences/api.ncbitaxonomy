@@ -1,6 +1,7 @@
 package ohnosequences.api.ncbitaxonomy.dmp
 
 import ohnosequences.api.ncbitaxonomy._
+import scala.collection.immutable.Queue
 import scala.collection.mutable.{
   ArrayBuffer => MutableArrayBuffer,
   Map => MutableMap
@@ -60,11 +61,15 @@ case object names {
 }
 
 case object parse {
+  type TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]
+  def TreeMap(): TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]()
+
+  val sep    = ","
+  val sepAux = ";"
+
   // Return a map TaxID -> (Option[ParentID], List[ChildID])
   @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
-  def generateNodesMap(
-      lines: Iterator[String]
-  ): Map[TaxID, (Option[TaxID], Array[TaxID])] = {
+  def generateNodesMap(lines: Iterator[String]): TreeMap = {
     // Create a map TaxID -> Option[ParentID]
     val parentsMap: Map[TaxID, Option[TaxID]] =
       dmp.nodes
@@ -91,8 +96,8 @@ case object parse {
       }
 
     // Create a map TaxID -> (Option[ParentID], List[ChildID])
-    val wholeMap: Map[TaxID, (Option[TaxID], Array[TaxID])] = parentsMap
-      .foldLeft(Map[TaxID, (Option[TaxID], Array[TaxID])]()) {
+    val wholeMap: TreeMap = parentsMap
+      .foldLeft(TreeMap()) {
         case (currentMap, (nodeID, parentID)) =>
           val children =
             childrenMap.get(nodeID).map({ _.toArray }).getOrElse(Array[TaxID]())
@@ -102,5 +107,68 @@ case object parse {
 
     // Return whole map
     wholeMap
+  }
+
+  def treeToIterators(map: TreeMap,
+                      root: TaxID): (Iterator[String], Iterator[String]) = {
+    @annotation.tailrec
+    def treeToFile_rec(
+        unvisitedNodes: Queue[TaxID],
+        in: Iterator[String],
+        out: Iterator[String]
+    ): (Iterator[String], Iterator[String]) = {
+      val (parent, poppedQueue) = unvisitedNodes.dequeue
+      val children              = map(parent)._2
+
+      // Parent_ID,[Child1_ID[;Child2_ID[; Child3_ID[...]]]]
+      val childrenLine = Array(
+        parent.toString,
+        children.mkString(sepAux)
+      ).mkString(sep)
+
+      // Child_ID,[ParentID]
+      val parentLines: Array[String] = children map { child =>
+        Array(child.toString, parent.toString).mkString(sep)
+      }
+
+      val nextQueue = poppedQueue ++ children
+
+      if (nextQueue.isEmpty)
+        (in ++ Array(childrenLine), out ++ parentLines)
+      else
+        treeToFile_rec(nextQueue, in ++ Array(childrenLine), out ++ parentLines)
+    }
+
+    treeToFile_rec(
+      Queue(root),
+      Iterator[String](),
+      Iterator[String](s"$root$sep")
+    )
+  }
+
+  def treeFromIterators(in: Iterator[String],
+                        out: Iterator[String]): TreeMap = {
+    val childrenMap = in.foldLeft(Map[TaxID, Array[TaxID]]()) {
+      case (currentMap, currentString) =>
+        val srcDst        = currentString.split(sep).map(_.trim)
+        val parent: TaxID = srcDst(0).toInt
+        val children: Array[TaxID] =
+          srcDst
+            .lift(1)
+            .fold(Array[TaxID]()) { arr =>
+              arr.split(sepAux).map(_.trim.toInt)
+            }
+
+        currentMap + (parent -> children)
+    }
+
+    out.foldLeft(TreeMap()) {
+      case (currentMap, currentString) =>
+        val srcDst                = currentString.split(sep).map(_.trim)
+        val child: TaxID          = srcDst(0).toInt
+        val parent: Option[TaxID] = srcDst.lift(1).map(_.toInt)
+
+        currentMap + (child -> ((parent, childrenMap(child))))
+    }
   }
 }
