@@ -27,6 +27,8 @@ class FullTaxonomySpec extends FunSuite {
         new File(s"./data/in/${db.ncbitaxonomy.version}/names.dmp")
 
       def lines = getLines(db.ncbitaxonomy.names, localFile)
+
+      val map: Map[TaxID, String] = io.generateNamesMap(lines)
     }
   }
 

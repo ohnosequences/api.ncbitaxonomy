@@ -7,9 +7,6 @@ import scala.collection.mutable.{
 }
 
 case object io {
-  type TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]
-  def TreeMap(): TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]()
-
   val sep    = ","
   val sepAux = ";"
 
@@ -117,4 +114,41 @@ case object io {
         currentMap + (child -> ((parent, childrenMap(child))))
     }
   }
+
+  def generateNamesMap(lines: Iterator[String]): Map[TaxID, String] =
+    dmp.names
+      .fromLines(lines)
+      .map({ name =>
+        name.nodeID -> name.name
+      })
+      .toMap
+
+  def namesToIterators(
+      namesMap: Map[TaxID, String]
+  ): (Iterator[String], Iterator[String]) = {
+    val itIn = namesMap.map({ case (k, v) => s"$k$sep$v" }).toIterator
+    val itOut = namesMap
+      .groupBy(_._2)
+      .map({
+        case (k, v) =>
+          s"$k$sep${v.keys.mkString(sepAux)}"
+      })
+      .toIterator
+
+    (itIn, itOut)
+  }
+
+  def namesFromIterator(itIn: Iterator[String]): Map[TaxID, String] =
+    itIn
+      .map({ str =>
+        // We cannot use split here, as the name may contain the separator
+        // used; instead, we find the first separator (the ID is numeric and
+        // does not contain it) and split there using take and drop.
+        val sepIdx = str.indexOf(sep)
+        val id     = toTaxID(str take sepIdx)
+        val name   = str drop (sepIdx + 1)
+
+        id -> name
+      })
+      .toMap
 }
