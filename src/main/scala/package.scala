@@ -8,7 +8,10 @@ package object ncbitaxonomy {
   type TaxID =
     Int
 
+  type TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]
+
   def toTaxID: String => TaxID =
     _.toInt
 
+  def TreeMap(): TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]()
 }
