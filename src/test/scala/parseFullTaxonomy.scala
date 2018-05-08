@@ -37,7 +37,7 @@ class ParseFullTaxonomy extends FullTaxonomySpec {
 
 class IO extends FullTaxonomySpec {
 
-  test("treeFromIterators ∘ treeToIterators ≡ identity", ReleaseOnlyTest) {
+  test(" treeFromIterators ∘ treeToIterators  ≡ identity", ReleaseOnlyTest) {
     val (itIn, itOut)  = io.treeToIterators(data.nodes.map, data.rootID)
     val parsedNodesMap = io.treeFromIterators(itIn, itOut)
 
@@ -55,6 +55,13 @@ class IO extends FullTaxonomySpec {
   test("namesFromIterators ∘ namesToIterators ≡ identity", ReleaseOnlyTest) {
     val (itIn, itOut)  = io.namesToIterators(data.names.map)
     val parsedNamesMap = io.namesFromIterator(itIn)
+
+    parsedNamesMap == data.names.map
+  }
+
+  test("ranksFromIterators ∘ ranksToIterators ≡ identity", ReleaseOnlyTest) {
+    val (itIn, itOut)  = io.ranksToIterators(data.nodes.ranks)
+    val parsedNamesMap = io.ranksFromIterator(itIn)
 
     parsedNamesMap == data.names.map
   }

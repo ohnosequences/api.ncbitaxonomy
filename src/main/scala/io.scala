@@ -151,4 +151,38 @@ case object io {
         id -> name
       })
       .toMap
+
+  def generateRanksMap(lines: Iterator[String]): Map[TaxID, Rank] =
+    dmp.nodes
+      .fromLines(lines)
+      .map({ node =>
+        node.ID -> Rank(node.rank)
+      })
+      .toMap
+
+  def ranksToIterators(
+      ranksMap: Map[TaxID, Rank]
+  ): (Iterator[String], Iterator[String]) = {
+    val itIn = ranksMap.map({ case (k, v) => s"$k$sep$v" }).toIterator
+    val itOut = ranksMap
+      .groupBy(_._2)
+      .map({
+        case (k, v) =>
+          s"$k$sep${v.keys.mkString(sepAux)}"
+      })
+      .toIterator
+
+    (itIn, itOut)
+  }
+
+  def ranksFromIterator(itIn: Iterator[String]): Map[TaxID, Rank] =
+    itIn
+      .map({ str =>
+        val srcDst = str.split(sep).map(_.trim)
+        val id     = toTaxID(srcDst(0))
+        val rank   = Rank(srcDst(1))
+
+        id -> rank
+      })
+      .toMap
 }
