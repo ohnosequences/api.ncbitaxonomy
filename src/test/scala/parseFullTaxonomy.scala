@@ -38,8 +38,8 @@ class ParseFullTaxonomy extends FullTaxonomySpec {
 class IO extends FullTaxonomySpec {
 
   test("treeToIterators ∘ treeFromIterators ≡ identity", ReleaseOnlyTest) {
-    val (itIn, itOut)  = dmp.parse.treeToIterators(data.nodes.map, data.rootID)
-    val parsedNodesMap = dmp.parse.treeFromIterators(itIn, itOut)
+    val (itIn, itOut)  = io.treeToIterators(data.nodes.map, data.rootID)
+    val parsedNodesMap = io.treeFromIterators(itIn, itOut)
 
     // Check parsedNodesMap == data.nodes.map, but tuples and arrays equality
     // make everything a little bit more cumbersome

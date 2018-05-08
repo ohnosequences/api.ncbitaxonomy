@@ -19,7 +19,7 @@ class FullTaxonomySpec extends FunSuite {
 
       def lines = getLines(db.ncbitaxonomy.nodes, localFile)
 
-      val map: TreeMap = dmp.parse.generateNodesMap(lines)
+      val map: TreeMap = io.generateNodesMap(lines)
     }
 
     object names {
