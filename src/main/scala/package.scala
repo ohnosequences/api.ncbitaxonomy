@@ -1,5 +1,7 @@
 package ohnosequences.api
 
+import ohnosequences.trees.{Node, Tree}
+
 package object ncbitaxonomy {
 
   private[ncbitaxonomy] type +[A, B] =
@@ -7,6 +9,9 @@ package object ncbitaxonomy {
 
   type TaxID =
     Int
+
+  type TaxNode = Node[TaxID]
+  type TaxTree = Tree[TaxID]
 
   type TreeMap = Map[TaxID, (Option[TaxID], Array[TaxID])]
 

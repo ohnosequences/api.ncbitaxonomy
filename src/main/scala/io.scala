@@ -1,5 +1,6 @@
 package ohnosequences.api.ncbitaxonomy
 
+import ohnosequences.trees.{Node, NodePosition}
 import scala.collection.immutable.Queue
 import scala.collection.mutable.{
   ArrayBuffer => MutableArrayBuffer,
@@ -185,4 +186,101 @@ case object io {
         id -> rank
       })
       .toMap
+
+  def treeMapToTaxTree(wholeMap: TreeMap, rootID: TaxID): TaxTree = {
+    val rootChildren = wholeMap(rootID)._2
+    val root: TaxNode =
+      new TaxNode(rootID, None, 0, rootChildren.length)
+
+    val rootLevel: Array[TaxNode]            = Array(root)
+    val initialLevels: Array[Array[TaxNode]] = Array(rootLevel)
+
+    @SuppressWarnings(
+      Array("org.wartremover.warts.Var", "org.wartremover.warts.While")
+    )
+    @annotation.tailrec
+    def generateTaxTree_rec(
+        levels: Array[Array[TaxNode]]
+    ): Array[Array[TaxNode]] = {
+      val lastLevel = levels.last
+
+      // Compute next level length
+      var length = 0
+      lastLevel foreach { parent =>
+        val (_, childrenIDs) = wholeMap(parent.payload)
+        length += childrenIDs.length
+      }
+
+      if (length == 0) {
+        levels
+      } else {
+        // Create empty array for next level
+        val nextLevel = new Array[TaxNode](length)
+
+        // Populate nextLevel
+        var childrenOffset      = 0
+        var grandChildrenOffset = 0
+        var parentPos           = 0
+
+        // Iterate nodes in current level and add their children to nextLevel
+        while (parentPos < lastLevel.length) {
+          val parent           = lastLevel(parentPos)
+          val (_, childrenIDs) = wholeMap(parent.payload)
+
+          var i = 0
+          while (i < childrenIDs.length) {
+            val childID               = childrenIDs(i)
+            val (_, grandChildrenIDs) = wholeMap(childID)
+            val grandChildrenNum      = grandChildrenIDs.length
+
+            nextLevel(childrenOffset + i) = new Node(childID,
+                                                     Some(parentPos),
+                                                     grandChildrenOffset,
+                                                     grandChildrenNum)
+
+            i += 1
+            grandChildrenOffset += grandChildrenNum
+          }
+
+          childrenOffset += childrenIDs.length
+          parentPos += 1
+        }
+
+        generateTaxTree_rec(levels :+ nextLevel)
+      }
+    }
+
+    new TaxTree(generateTaxTree_rec(initialLevels))
+  }
+
+  def taxTreeToTreeMap(taxTree: TaxTree): TreeMap =
+    taxTree.indices.foldLeft(TreeMap()) {
+      case (map, nodePos) =>
+        val node = taxTree(nodePos).payload
+        val parent = taxTree.parent(nodePos) map { parentPos =>
+          taxTree(parentPos).payload
+        }
+        val children = taxTree.children(nodePos) map { childPos =>
+          taxTree(childPos).payload
+        }
+
+        map + (node -> ((parent, children)))
+    }
+
+  def taxSubTreeIndicesToTreeMap(
+      taxTree: TaxTree,
+      positions: Array[NodePosition]
+  ): TreeMap =
+    positions.foldLeft(TreeMap()) {
+      case (map, nodePos) =>
+        val node = taxTree(nodePos).payload
+        val parent = taxTree.parent(nodePos) map { parentPos =>
+          taxTree(parentPos).payload
+        }
+        val children = taxTree.children(nodePos) map { childPos =>
+          taxTree(childPos).payload
+        }
+
+        map + (node -> ((parent, children)))
+    }
 }
