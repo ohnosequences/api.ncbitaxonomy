@@ -254,7 +254,7 @@ case object io {
   }
 
   def taxTreeToTreeMap(taxTree: TaxTree): TreeMap =
-    taxTree.indices.foldLeft(TreeMap()) {
+    taxTree.toIterator.foldLeft(TreeMap()) {
       case (map, nodePos) =>
         val node = taxTree(nodePos).payload
         val parent = taxTree.parent(nodePos) map { parentPos =>
