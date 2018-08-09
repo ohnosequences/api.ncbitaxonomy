@@ -17,11 +17,16 @@ case object row {
 
 class Node(val fields: Array[String]) extends AnyNode {
 
-  def ID: String =
-    fields(0)
+  def ID: TaxID =
+    toTaxID(fields(0))
 
-  def parentID: String =
-    fields(1)
+  def parentID: Option[TaxID] = {
+    val parent = toTaxID(fields(1))
+    if (parent == ID)
+      None
+    else
+      Some(parent)
+  }
 
   def rank: String =
     fields(2)
@@ -38,6 +43,7 @@ case object nodes {
   def fromLines(lines: Iterator[String]): Iterator[Node] =
     lines map Node.from
 }
+
 case object names {
 
   def fromLines(lines: Iterator[String]): Iterator[ScientificName] =
@@ -45,6 +51,6 @@ case object names {
       .collect {
         case line if (row.fromLine(line)(3) == "scientific name") =>
           val r = row.fromLine(line)
-          ScientificName(r(0), r(1))
+          ScientificName(toTaxID(r(0)), r(1))
       }
 }

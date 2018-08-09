@@ -1,38 +1,13 @@
 package ohnosequences.api.ncbitaxonomy.test
 
-import org.scalatest.FunSuite
 import ohnosequences.api.ncbitaxonomy._
-import ohnosequences.db
-import ohnosequences.api.ncbitaxonomy.test.utils._
 import ohnosequences.test.ReleaseOnlyTest
-import ohnosequences.awstools.s3.S3Object
-import java.io.File
 
-class ParseFullTaxonomy extends FunSuite {
-
-  /**
-    * Auxiliary method that returns an Iterator[String] from `file`. If `file`
-    * does not exist, it is downloaded from `s3Object` before parsing its lines.
-    */
-  def getLines(s3Object: S3Object, file: File): Iterator[String] = {
-    if (!file.exists)
-      downloadFrom(s3Object, file).left
-        .map { e =>
-          fail(e.msg)
-        }
-
-    retrieveLinesFrom(file) match {
-      case Right(x) => x
-      case Left(e)  => fail(e.msg)
-    }
-  }
-
-  def getNamesLines = getLines(db.ncbitaxonomy.names, data.namesLocalFile)
-  def getNodesLines = getLines(db.ncbitaxonomy.nodes, data.nodesLocalFile)
+class ParseFullTaxonomy extends FullTaxonomySpec {
 
   test("Parse all names and access all data", ReleaseOnlyTest) {
 
-    dmp.names.fromLines(getNamesLines) foreach { n =>
+    dmp.names.fromLines(data.names.lines) foreach { n =>
       val id   = n.nodeID
       val name = n.name
 
@@ -40,13 +15,13 @@ class ParseFullTaxonomy extends FunSuite {
       // complaints about the values above being unused, so trick sbt into
       // thinkink we are using them.
       // TODO: Code a proper test instead of this silly trick.
-      id + name
+      (id, name)
     }
   }
 
   test("Parse all nodes and access all data", ReleaseOnlyTest) {
 
-    dmp.nodes.fromLines(getNodesLines) foreach { node =>
+    dmp.nodes.fromLines(data.nodes.lines) foreach { node =>
       val id     = node.ID
       val parent = node.parentID
       val rank   = node.rank
@@ -55,7 +30,39 @@ class ParseFullTaxonomy extends FunSuite {
       // complaints about the values above being unused, so trick sbt into
       // thinkink we are using them.
       // TODO: Code a proper test instead of this silly trick.
-      id + parent + rank
+      (id, parent, rank)
     }
+  }
+}
+
+class IO extends FullTaxonomySpec {
+
+  test(" treeFromIterators ∘ treeToIterators  ≡ identity", ReleaseOnlyTest) {
+    val (itIn, itOut)  = io.treeToIterators(data.nodes.map, data.rootID)
+    val parsedNodesMap = io.treeFromIterators(itIn, itOut)
+
+    // Check parsedNodesMap == data.nodes.map, but tuples and arrays equality
+    // make everything a little bit more cumbersome
+    assert { parsedNodesMap.keySet == data.nodes.map.keySet }
+    parsedNodesMap foreach {
+      case (k, parsedValue) =>
+        val value = data.nodes.map(k)
+        assert { parsedValue._1 == value._1 }
+        assert { parsedValue._2 sameElements value._2 }
+    }
+  }
+
+  test("namesFromIterators ∘ namesToIterators ≡ identity", ReleaseOnlyTest) {
+    val (itIn, itOut)  = io.namesToIterators(data.names.map)
+    val parsedNamesMap = io.namesFromIterator(itIn)
+
+    parsedNamesMap == data.names.map
+  }
+
+  test("ranksFromIterators ∘ ranksToIterators ≡ identity", ReleaseOnlyTest) {
+    val (itIn, itOut)  = io.ranksToIterators(data.nodes.ranks)
+    val parsedNamesMap = io.ranksFromIterator(itIn)
+
+    parsedNamesMap == data.names.map
   }
 }

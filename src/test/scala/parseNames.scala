@@ -31,8 +31,8 @@ class ParseNames extends FunSuite {
 
     assert {
       dmp.names.fromLines(nameLines.toIterator).toSeq === Seq(
-        ScientificName("195", "Campylobacter coli"),
-        ScientificName("245", "Flavobacterium aquatile")
+        ScientificName(195, "Campylobacter coli"),
+        ScientificName(245, "Flavobacterium aquatile")
       )
     }
   }
